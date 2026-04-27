@@ -105,6 +105,24 @@ python3 get_embd_w2v.py
 
 ![](./assets/table1.png)
 
+### Model download
+
+#### **Training sets: VoxCeleb2 + VoxBlink2 + CN-Celeb1&2 + Kespeech + 3D-Speaker**
+
+**Model: LoRA_Adapter_MFA** 
+
+**Params: 580+6.2M**
+
+| Vox1-O (EER) | Vox1-E (EER) | Vox1-H (EER) | CN-Celeb Test (EER) | tv26_dev | Download Link                                                |
+| ------------ | ------------ | ------------ | ------------------- | -------- | ------------------------------------------------------------ |
+| 0.22%        | 0.38%        | 0.81%        | 3.54%               | 2.74%    | [Link](https://huggingface.co/zl389/w2v-bert-2.0_SV/tree/main/Lora_Adapter_MFA_VoxCleleb2_VoxBlink2_CnCeleb1%262_KeSpeech_3dSpeaker/s2) |
+
+#### Fine-tuining Data: TidyVoice2026 Train set
+
+| tv26_dev | Download Link                                                |
+| -------- | ------------------------------------------------------------ |
+| 0.937%   | [Link](https://huggingface.co/zl389/w2v-bert-2.0_SV/tree/main/TidyVoice2026_GRL) |
+
 ## Citations
 
 ```

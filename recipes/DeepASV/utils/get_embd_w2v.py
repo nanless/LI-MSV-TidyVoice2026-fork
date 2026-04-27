@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore")
 scp_path = '/work/zl389/workspace/LLM_ASV/data/test_vox/vox1-o/wav_copy.scp'
 scp_list = [line.strip().split('\t') for line in open(scp_path)]
 
-ckpt_path = '/work/zl389/workspace/LLM_ASV/w2v-BERT-2.0_SV/recipes/DeepASV/results/prune_model/ckpt_0032_4500item.pth'
+ckpt_path = ''
 
 
 ckpt_data = torch.load(ckpt_path, map_location='cpu', weights_only=False)
@@ -43,6 +43,13 @@ for key, module in modules.items():
 sr = hparams['sample_rate']
 max_len = int(hparams['max_valid_dur'] * hparams['sample_rate'])
 
+def extract_embd(model, inputs):
+    out = model(inputs)
+    if isinstance(out, (tuple, list)):
+        embd = out[0]
+    else:
+        embd = out
+    return embd
 
 utt2embd = {}
 dtype = torch.bfloat16 if hparams['use_amp'] else torch.float32
@@ -56,7 +63,8 @@ with torch.autocast('cuda', dtype):
             wav_path = scp_data[1]
             signal = load_audio(wav_path, sr)[0][:max_len]
             aud_inputs = torch.from_numpy(signal).float()
-            utt2embd[utt] = modules['spk_model'](aud_inputs).float().detach().cpu().numpy()
+            # utt2embd[utt] = modules['spk_model'](aud_inputs).float().detach().cpu().numpy()
+            utt2embd[utt] = extract_embd(modules['spk_model'], aud_inputs).float().detach().cpu().numpy()
 
 
 from deeplab.metric.eer import get_eer
