@@ -117,7 +117,7 @@ python3 get_embd_w2v.py
 | ------------ | ------------ | ------------ | ------------------- | -------- | ------------------------------------------------------------ |
 | 0.22%        | 0.38%        | 0.81%        | 3.54%               | 2.74%    | [Link](https://huggingface.co/zl389/w2v-bert-2.0_SV/tree/main/Lora_Adapter_MFA_VoxCleleb2_VoxBlink2_CnCeleb1%262_KeSpeech_3dSpeaker/s2) |
 
-#### Fine-tuining Data: TidyVoice2026 Train set
+#### Fine-tuning Data: TidyVoice2026 Train set
 
 | tv26_dev | Download Link                                                |
 | -------- | ------------------------------------------------------------ |
