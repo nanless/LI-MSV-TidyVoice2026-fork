@@ -1,0 +1,4 @@
+*.pyc
+*.pt
+*.pth
+model.safetensors
