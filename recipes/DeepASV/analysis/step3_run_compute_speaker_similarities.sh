@@ -59,7 +59,8 @@ if [ -d "$SPEAKERS_FULL_PATH" ]; then
 fi
 
 source "$(conda info --base 2>/dev/null)/etc/profile.d/conda.sh" 2>/dev/null || true
-conda activate asv 2>/dev/null || true
+eval "$(conda shell.bash hook)" 2>/dev/null || true
+conda activate asv
 
 echo -e "${GREEN}开始计算相似度...${NC}"
 echo -e "${GREEN}开始时间: $(date)${NC}"
