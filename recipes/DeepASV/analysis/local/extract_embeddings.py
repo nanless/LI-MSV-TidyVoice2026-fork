@@ -56,6 +56,11 @@ class AudioInferenceDataset(torch.utils.data.Dataset):
         return audio_path, dir_part, file_stem, signal
 
 
+def collate_audio_batch(batch):
+    audio_paths, dir_parts, file_stems, signals = zip(*batch)
+    return list(audio_paths), list(dir_parts), list(file_stems), list(signals)
+
+
 def load_model_and_config(ckpt_path, yaml_path, device):
     ckpt_data = torch.load(ckpt_path, map_location='cpu', weights_only=False)
     hparams = read_hyperyaml(path=yaml_path)
@@ -147,6 +152,7 @@ def main():
         pin_memory_device=str(args.device),
         prefetch_factor=8 if args.num_workers > 0 else None,
         persistent_workers=True if args.num_workers > 0 else False,
+        collate_fn=collate_audio_batch,
     )
 
     processed = 0
@@ -159,29 +165,27 @@ def main():
         with open(out_path, 'wb') as f:
             pickle.dump(emb, f)
 
-    for audio_path, dir_part, file_stem, aud_inputs in tqdm(loader, desc=f'GPU{args.file_offset}', ncols=100):
-        audio_path = audio_path[0]
-        dir_part = dir_part[0]
-        file_stem = file_stem[0]
-        aud_inputs = aud_inputs.to(args.device, non_blocking=True)
+    for _audio_paths, dir_parts, file_stems, aud_inputs_batch in tqdm(loader, desc=f'GPU{args.file_offset}', ncols=100):
+        for dir_part, file_stem, aud_inputs in zip(dir_parts, file_stems, aud_inputs_batch):
+            out_path = os.path.join(args.output_dir, dir_part, f'{file_stem}.pkl')
+            if args.skip_existing and os.path.exists(out_path):
+                skipped += 1
+                continue
 
-        out_path = os.path.join(args.output_dir, dir_part, f'{file_stem}.pkl')
-        if args.skip_existing and os.path.exists(out_path):
-            skipped += 1
-            continue
+            # Keep one waveform per model call so padding never changes embeddings.
+            aud_inputs = aud_inputs.to(args.device, non_blocking=True)
+            with torch.autocast('cuda', dtype=dtype):
+                with torch.no_grad():
+                    embedding = extract_embd(spk_model, aud_inputs)
+                    if len(embedding.shape) == 3:
+                        embedding = embedding[:, -1, :]
+                    embedding = embedding.float().detach().cpu().numpy().squeeze(0)
 
-        with torch.autocast('cuda', dtype=dtype):
-            with torch.no_grad():
-                embedding = extract_embd(spk_model, aud_inputs)
-                if len(embedding.shape) == 3:
-                    embedding = embedding[:, -1, :]
-                embedding = embedding.float().detach().cpu().numpy().squeeze(0)
+            pending.append(write_executor.submit(_write_one, out_path, embedding))
+            processed += 1
 
-        pending.append(write_executor.submit(_write_one, out_path, embedding))
-        processed += 1
-
-        if len(pending) > 200:
-            pending = [f for f in pending if not f.done()]
+            if len(pending) > 200:
+                pending = [f for f in pending if not f.done()]
 
     for f in pending:
         f.result()
